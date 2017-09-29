@@ -6,3 +6,25 @@
 [![codecov.io](http://codecov.io/github/tpapp/WallTimeProgress.jl/coverage.svg?branch=master)](http://codecov.io/github/tpapp/WallTimeProgress.jl?branch=master)
 
 Report progress while processing an ex ante unknown number of items.
+
+## Usage
+
+```julia
+julia> using WallTimeProgress
+
+julia> tracker = WallTimeTracker(10)   # output every 10 periods
+(no items yet)
+
+
+julia> increment!(tracker)
+
+julia> sleep(1)
+
+julia> increment!(tracker, 9)
+processed 10 items, 0.1019247994 s/item
+
+julia> count(tracker)
+10
+```
+
+See `?WallTimeTracker` for options.
