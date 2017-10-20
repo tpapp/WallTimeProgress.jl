@@ -2,9 +2,28 @@ module WallTimeProgress
 
 using ArgCheck
 using EnglishText
+using Formatting
 
 export WallTimeTracker, increment!, reset!
 
+"""
+    WallTimeTracker(period; item_name = "item", output = STDOUT, count = 0)
+
+Create an object that can be used to track progress through an *ex ante* unknown
+number of `item`s.
+
+# Arguments
+
+- `period`: incrementing the counter will display progress information after
+  every `period`
+
+- `item_name`: used for display, potentially pluralized (eg "item", "line",
+  "record")
+
+- `output`: a stream for displaying progress information
+
+- `count`: the initial count
+"""
 mutable struct WallTimeTracker{Tname <: AbstractString,
                                Tcount <: Integer,
                                Toutput <: IO}
@@ -45,10 +64,21 @@ function reset!(wtt::WallTimeTracker)
     nothing
 end
 
+"""
+    _with_underscores(x)
+
+Return a string representing the integer `x`, with `_` as the thousands
+separator.
+"""
+_with_underscores(x::Integer) = replace(format(x, commas = true), ",", "_")
+
 function Base.show(io::IO, wtt::WallTimeTracker)
     name = wtt.item_name
-    print(io, wtt.count > 0 ? "processed $(ItemQuantity(wtt.count, name))" :
-          "(no $(pluralize(name)) yet)")
+    if wtt.count > 0
+        print(io, "processed $(_with_underscores(wtt.count)) $(pluralize(name))")
+    else
+        print(io, "(no $(pluralize(name)) yet)")
+    end
     Δ = (wtt.count - wtt.last_count)
     if Δ > 0
         avg = (time_ns() - wtt.last_time_ns) / (1e9 * Δ)

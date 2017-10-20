@@ -1,7 +1,14 @@
 using WallTimeProgress
 using Base.Test
 
-import WallTimeProgress: next_period
+import WallTimeProgress: next_period, _with_underscores
+
+@testset "utilities" begin
+    @test _with_underscores(199) == "199"
+    @test _with_underscores(0) == "0"
+    @test _with_underscores(1099) == "1_099"
+    @test _with_underscores(1700000) == "1_700_000"
+end
 
 @testset "next period" begin
     @test next_period(1, 10) == 10
