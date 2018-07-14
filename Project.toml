@@ -1,0 +1,7 @@
+name = "WallTimeProgress"
+uuid = "c0177115-0c79-5f6a-b061-e9fe291dc280"
+authors = ["Tamas K. Papp <tkpapp@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"

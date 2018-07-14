@@ -1,45 +1,51 @@
 module WallTimeProgress
 
-using ArgCheck
-using EnglishText
-using Formatting
+using ArgCheck: @argcheck
 
-export WallTimeTracker, increment!, reset!
+export WallTimeTracker
 
 """
-    WallTimeTracker(period; item_name = "item", output = STDOUT, count = 0)
+    WallTimeTracker(period; output = stdout, count = 0)
 
 Create an object that can be used to track progress through an *ex ante* unknown
-number of `item`s.
+number of records.
 
 # Arguments
 
 - `period`: incrementing the counter will display progress information after
   every `period`
 
-- `item_name`: used for display, potentially pluralized (eg "item", "line",
-  "record")
-
 - `output`: a stream for displaying progress information
 
 - `count`: the initial count
+
+# Usage
+
+```julia
+w = WallTimeTracker(10)
+for _ in 1:100
+   WallTimeProgress.increment!(w) # will print updates every 10 steps
+end
+```
+
+See [`increment!`](@ref), also [`reset!`].
+
+`Base.count` can be used to query the current count.
 """
-mutable struct WallTimeTracker{Tname <: AbstractString,
-                               Tcount <: Integer,
+
+mutable struct WallTimeTracker{Tcount <: Integer,
                                Toutput <: IO}
     period::Tcount
-    item_name::Tname
     output::Toutput
     count::Tcount
     next_report::Tcount
     last_count::Tcount
     last_time_ns::UInt64
-    function WallTimeTracker(period::Tcount;
-                             item_name::Tname = "item", output::Toutput = STDOUT,
-                             count::Tcount = 0) where {Tname, Tcount, Toutput}
+    function WallTimeTracker(period::Tcount; output::Toutput = stdout,
+                             count::Tcount = 0) where {Tcount, Toutput}
         @argcheck period > 0
-        new{Tname, Tcount, Toutput}(period, item_name, output,
-                                    0, next_period(count, period), 0, time_ns())
+        new{Tcount, Toutput}(period, output, 0,
+                             next_period(count, period), 0, time_ns())
     end
 end
 
@@ -70,19 +76,27 @@ end
 Return a string representing the integer `x`, with `_` as the thousands
 separator.
 """
-_with_underscores(x::Integer) = replace(format(x, commas = true), ",", "_")
+function _with_underscores(x::Integer)
+    result = IOBuffer()
+    ds = digits(x)
+    n = length(ds)
+    for (i, d) in enumerate(ds)
+        write(result, '0' + d)
+        i % 3 == 0 && i < n && write(result, '_')
+    end
+    String(reverse!(take!(result)))
+end
 
 function Base.show(io::IO, wtt::WallTimeTracker)
-    name = wtt.item_name
     if wtt.count > 0
-        print(io, "processed $(_with_underscores(wtt.count)) $(pluralize(name))")
+        print(io, "processed $(_with_underscores(wtt.count)) records")
     else
-        print(io, "(no $(pluralize(name)) yet)")
+        print(io, "(no records yet)")
     end
     Δ = (wtt.count - wtt.last_count)
     if Δ > 0
         avg = (time_ns() - wtt.last_time_ns) / (1e9 * Δ)
-        print(io, ", $avg s/$(name)")
+        print(io, ", $avg s/record")
     end
     println(io)
 end
@@ -90,6 +104,7 @@ end
 Base.count(wtt::WallTimeTracker) = wtt.count
 
 function increment!(wtt::WallTimeTracker, step = 1)
+    @argcheck step > 0
     wtt.count += step
     if wtt.count ≥ wtt.next_report
         show(wtt.output, wtt)

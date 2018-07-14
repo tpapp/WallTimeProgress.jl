@@ -1,7 +1,7 @@
 using WallTimeProgress
-using Base.Test
+using Test
 
-import WallTimeProgress: next_period, _with_underscores
+import WallTimeProgress: next_period, _with_underscores, increment!, reset!
 
 @testset "utilities" begin
     @test _with_underscores(199) == "199"
@@ -27,8 +27,8 @@ end
     increment!(wtt, 9)
     output = split(String(take!(io)), '\n')
     println(output)
-    @test ismatch(r"processed 10 items, [-e.0-9]+ s/item", output[1])
-    @test ismatch(r"processed 28 items, [-e.0-9]+ s/item", output[2])
+    @test occursin(r"processed 10 records, [-e.0-9]+ s/record", output[1])
+    @test occursin(r"processed 28 records, [-e.0-9]+ s/record", output[2])
     @test count(wtt) == 28
     @test wtt.next_report == 30
 end
