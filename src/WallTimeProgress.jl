@@ -32,7 +32,6 @@ See [`increment!`](@ref), also [`reset!`].
 
 `Base.count` can be used to query the current count.
 """
-
 mutable struct WallTimeTracker{Tcount <: Integer,
                                Toutput <: IO}
     period::Tcount
